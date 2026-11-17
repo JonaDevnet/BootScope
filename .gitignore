@@ -21,3 +21,9 @@ cmake-build-*/
 # Reportes generados
 *.report.json
 bootscope-backup-*.json
+
+# Artefactos locales
+build.log
+tv.*
+*.i
+*.err
