@@ -99,6 +99,23 @@ Nunca se ofrecen Defender, el firewall, RPC/DCOM ni los servicios críticos.
 - Sin privilegios de administrador se omiten SMART, el evento 100 de rendimiento
   y algunos servicios protegidos.
 
+## Pruebas
+
+```bat
+build\bootscope.exe --selftest
+```
+
+Simula clics sobre la interfaz y verifica pestañas, checkbox, panel de detalle,
+los tres perfiles, **Escanear**, **Exportar** y **Seleccionar todo**. Deja el
+resultado en `%TEMP%\bootscope-selftest.log` y devuelve como código de salida la
+cantidad de fallos (0 = todo bien).
+
+Variables de diagnóstico:
+
+- `BS_DEBUG=1` registra los mensajes de entrada y el estado de cada frame en
+  `%TEMP%\bootscope-input.log`.
+- `BS_TAB=0..5` abre directamente una pestaña.
+
 ## Documentación
 
 - [Catálogo de chequeos](docs/checks.md): qué detecta cada `check_id`, su riesgo y si es reversible.

@@ -22,6 +22,8 @@ NK_API struct nk_context* nk_gdi_init(GdiFont *font, HDC window_dc, unsigned int
 NK_API int nk_gdi_handle_event(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 NK_API void nk_gdi_render(struct nk_color clear);
 NK_API void nk_gdi_shutdown(void);
+/* BootScope: permite renderizar sobre el DC del WM_PAINT (parche local) */
+NK_API void nk_gdi_set_dc(HDC dc);
 
 /* font */
 NK_API GdiFont* nk_gdifont_create(const char *name, int size);
@@ -985,6 +987,12 @@ nk_gdi_shutdown(void)
     DeleteObject(gdi.memory_dc);
     DeleteObject(gdi.bitmap);
     nk_free(&gdi.ctx);
+}
+
+NK_API void
+nk_gdi_set_dc(HDC dc)
+{
+    if (dc) gdi.window_dc = dc;
 }
 
 NK_API void
