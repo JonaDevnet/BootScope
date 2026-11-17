@@ -21,6 +21,7 @@ set(BS_SOURCES
     src/core/checks.c
     src/core/score.c
     src/core/report.c
+    src/core/actions.c
 )
 
 add_executable(bootscope WIN32 ${BS_SOURCES})
@@ -54,4 +55,5 @@ else()
 endif()
 
 install(TARGETS bootscope RUNTIME DESTINATION .)
+
 

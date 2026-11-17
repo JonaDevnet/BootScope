@@ -27,3 +27,4 @@ build.log
 tv.*
 *.i
 *.err
+bootscope-backup-*

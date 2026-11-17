@@ -43,33 +43,6 @@ static long long xml_num(const char *xml, const char *nombre)
     return parse_num(p + 1);
 }
 
-static const char *xml_str(const char *xml, const char *nombre, char *dst, size_t dstsz)
-{
-    char pat[96];
-    const char *p, *e;
-    if (dst && dstsz) dst[0] = 0;
-    snprintf(pat, sizeof(pat), "Name='%s'", nombre);
-    p = strstr(xml, pat);
-    if (!p) {
-        snprintf(pat, sizeof(pat), "Name=\"%s\"", nombre);
-        p = strstr(xml, pat);
-    }
-    if (!p || !dst) return dst;
-    p = strchr(p, '>');
-    if (!p) return dst;
-    p++;
-    e = strstr(p, "</Data>");
-    if (!e) return dst;
-    {
-        size_t n = (size_t)(e - p);
-        if (n >= dstsz) n = dstsz - 1;
-        memcpy(dst, p, n);
-        dst[n] = 0;
-        bs_trim(dst);
-    }
-    return dst;
-}
-
 /*
  * Devuelve el XML del evento mas reciente que cumpla el XPath.
  * 1 = encontrado, 0 = no hay / sin acceso.
@@ -266,5 +239,6 @@ void boot_collect(bs_model *m)
     if (m->boot.kernel_desktop_s > 0.0 || m->boot.firmware_s > 0.0)
         m->boot.valido = 1;
 }
+
 
 

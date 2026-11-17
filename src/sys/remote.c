@@ -1,4 +1,4 @@
-/*
+﻿/*
  * BootScope - deteccion de accesos remotos
  * Copyright (c) 2026 Jonathan Rinaldi (JonaDevnet)
  * SPDX-License-Identifier: MIT
@@ -65,8 +65,6 @@ static void fecha_archivo(const wchar_t *ruta, char *out, size_t outsz)
     snprintf(out, outsz, "%02d/%02d/%04d", st.wDay, st.wMonth, st.wYear);
 }
 
-static int startswith_ci(const char *s, const char *pre);
-
 static void agregar_remoto(bs_model *m, const char *titulo, const char *estado,
                            const char *detalle, const char *target, const char *inicio,
                            bs_riesgo riesgo, int recomendado)
@@ -85,17 +83,6 @@ static void agregar_remoto(bs_model *m, const char *titulo, const char *estado,
     it->recomendado = recomendado;
     if (bs_ci_contains(estado, "Activo") || bs_ci_contains(estado, "Habilitado"))
         it->accion = BS_ACT_SERVICIO_DESHABILITAR;
-}
-
-static int startswith_ci(const char *s, const char *pre)
-{
-    while (*pre) {
-        char a = *s++, b = *pre++;
-        if (a >= 'A' && a <= 'Z') a = (char)(a - 'A' + 'a');
-        if (b >= 'A' && b <= 'Z') b = (char)(b - 'A' + 'a');
-        if (!a || a != b) return 0;
-    }
-    return 1;
 }
 
 void remote_collect(bs_model *m)
@@ -191,3 +178,4 @@ void remote_collect(bs_model *m)
         }
     }
 }
+

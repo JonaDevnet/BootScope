@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 rem Build rapido con MinGW-w64 (sin CMake)
 setlocal
 set OUT=build
@@ -28,7 +28,7 @@ gcc -std=c11 -O2 -Wall -Wextra ^
   src\main.c src\app.c src\ui.c src\nk_impl.c ^
   src\sys\util.c src\sys\osinfo.c src\sys\boot.c src\sys\scm.c ^
   src\sys\startup.c src\sys\net.c src\sys\remote.c src\sys\hw.c ^
-  src\core\scan.c src\core\checks.c src\core\score.c src\core\report.c ^
+  src\core\scan.c src\core\checks.c src\core\score.c src\core\report.c src\core\actions.c ^
   -o %OUT%\bootscope.exe ^
   -mwindows -luser32 -lgdi32 -lmsimg32 -lshell32 -ladvapi32 -lwevtapi -liphlpapi -lws2_32 -lole32
 
@@ -38,3 +38,4 @@ if errorlevel 1 (
 )
 echo Listo: %OUT%\bootscope.exe
 endlocal
+

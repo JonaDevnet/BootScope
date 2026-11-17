@@ -18,6 +18,7 @@
 #include "ui.h"
 #include "core/scan.h"
 #include "core/checks.h"
+#include "core/actions.h"
 #include "sys/util.h"
 
 #define BS_WIN_W 1280
@@ -85,19 +86,14 @@ static void imprimir_resumen(const bs_model *m)
     printf("\n");
 }
 
-static void lista_items(const bs_model *m, bs_cat cat)
+/* ------------------------------------------------------------------ */
+static void relanzar_admin(void)
 {
-    printf("== %s ==\n", bs_cat_nombre(cat));
-    for (int i = 0; i < m->n_items; i++) {
-        const bs_item *it = &m->items[i];
-        if (it->cat != cat) continue;
-        printf("  %-40s %-12s %-10s %s\n", it->titulo, it->estado,
-               it->metrica, it->edad);
-    }
-    printf("\n");
+    wchar_t exe[MAX_PATH];
+    if (!GetModuleFileNameW(NULL, exe, MAX_PATH)) return;
+    ShellExecuteW(NULL, L"runas", exe, NULL, NULL, SW_SHOWNORMAL);
 }
 
-/* ------------------------------------------------------------------ */
 static void procesar_ui(void)
 {
     if (g_ui.pedir_escaneo) {
@@ -141,13 +137,36 @@ static void procesar_ui(void)
             g_ui.mensaje_error = 1;
         } else if (!g_model.admin) {
             snprintf(g_ui.mensaje, sizeof(g_ui.mensaje),
-                     "Requiere administrador: cerra y volve a abrir como admin");
-            g_ui.mensaje_error = 1;
-        } else {
-            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje),
-                     "Motor de acciones disponible en la fase 3");
+                     "Se necesita administrador: relanzando...");
             g_ui.mensaje_error = 0;
+            relanzar_admin();
+            PostQuitMessage(0);
+            return;
+        } else {
+            char msg[256];
+            int r = actions_apply(&g_model, msg, sizeof(msg));
+            bs_scan(&g_model);
+            g_ui.fila_sel = 0;
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%s", msg);
+            g_ui.mensaje_error = (r < 0);
         }
+    }
+    if (g_ui.pedir_deshacer) {
+        char msg[256];
+        g_ui.pedir_deshacer = 0;
+        if (!g_model.admin) {
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje),
+                     "Se necesita administrador: relanzando...");
+            g_ui.mensaje_error = 0;
+            relanzar_admin();
+            PostQuitMessage(0);
+            return;
+        }
+        actions_undo(msg, sizeof(msg));
+        bs_scan(&g_model);
+        g_ui.fila_sel = 0;
+        snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%s", msg);
+        g_ui.mensaje_error = 0;
     }
     InvalidateRect(GetActiveWindow(), NULL, FALSE);
 }
@@ -325,4 +344,5 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
     ReleaseDC(hwnd, g_dc);
     return 0;
 }
+
 

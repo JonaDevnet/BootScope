@@ -66,18 +66,6 @@ static int servicio_protegido(const char *nombre, const char *path)
     return 0;
 }
 
-static const char *tipo_inicio(DWORD t)
-{
-    switch (t) {
-    case SERVICE_AUTO_START:     return "Automatico";
-    case SERVICE_DEMAND_START:   return "Manual";
-    case SERVICE_DISABLED:       return "Deshabilitado";
-    case SERVICE_BOOT_START:     return "Arranque";
-    case SERVICE_SYSTEM_START:   return "Sistema";
-    default:                     return "?";
-    }
-}
-
 void scm_collect(bs_model *m)
 {
     SC_HANDLE scm;
@@ -179,4 +167,5 @@ void scm_collect(bs_model *m)
     if (buf) free(buf);
     CloseServiceHandle(scm);
 }
+
 

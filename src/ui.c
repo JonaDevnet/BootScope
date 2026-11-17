@@ -225,7 +225,7 @@ static void fila_item(struct nk_context *ctx, bs_model *m, bs_ui *ui, bs_item *i
 static void panel_detalle(struct nk_context *ctx, bs_model *m, bs_ui *ui)
 {
     bs_item *it = NULL;
-    char b1[420];
+    char b1[420], b2[460];
     if (ui->fila_sel <= 0) return;
     for (int i = 0; i < m->n_items; i++)
         if (m->items[i].id == ui->fila_sel) { it = &m->items[i]; break; }
@@ -247,7 +247,7 @@ static void panel_detalle(struct nk_context *ctx, bs_model *m, bs_ui *ui)
         if (it->target[0]) {
             nk_layout_row_dynamic(ctx, 18, 1);
             snprintf(b1, sizeof(b1), "objeto: %s", it->target);
-            nk_label_colored(ctx, clip(b1, sizeof(b1), b1, 120), NK_TEXT_LEFT, C_TEXT_DIM);
+            nk_label_colored(ctx, clip(b2, sizeof(b2), b1, 120), NK_TEXT_LEFT, C_TEXT_DIM);
         }
         nk_group_end(ctx);
     }
@@ -279,20 +279,22 @@ static void panel_header(struct nk_context *ctx, bs_model *m, bs_ui *ui)
                          NK_TEXT_RIGHT, m->admin ? C_OK : C_WARN);
         nk_layout_row_end(ctx);
 
-        nk_layout_row_begin(ctx, NK_DYNAMIC, 26, 5);
-        nk_layout_row_push(ctx, 0.16f);
+        nk_layout_row_begin(ctx, NK_DYNAMIC, 26, 6);
+        nk_layout_row_push(ctx, 0.14f);
         if (nk_button_label(ctx, "Escanear")) ui->pedir_escaneo = 1;
-        nk_layout_row_push(ctx, 0.16f);
+        nk_layout_row_push(ctx, 0.14f);
         snprintf(buf, sizeof(buf), "Recomendados (%d)", rec);
         if (nk_button_label(ctx, buf)) ui->pedir_recomendados = 1;
-        nk_layout_row_push(ctx, 0.16f);
+        nk_layout_row_push(ctx, 0.14f);
         snprintf(buf, sizeof(buf), "Aplicar (%d)", sel);
         if (nk_button_label(ctx, buf)) ui->pedir_aplicar = 1;
-        nk_layout_row_push(ctx, 0.16f);
-        if (nk_button_label(ctx, "Exportar JSON")) ui->pedir_exportar = 1;
-        nk_layout_row_push(ctx, 0.36f);
+        nk_layout_row_push(ctx, 0.14f);
+        if (nk_button_label(ctx, "Deshacer")) ui->pedir_deshacer = 1;
+        nk_layout_row_push(ctx, 0.14f);
+        if (nk_button_label(ctx, "Exportar")) ui->pedir_exportar = 1;
+        nk_layout_row_push(ctx, 0.30f);
         if (ui->mensaje[0])
-            nk_label_colored(ctx, clip(buf, sizeof(buf), ui->mensaje, 60), NK_TEXT_RIGHT,
+            nk_label_colored(ctx, clip(buf, sizeof(buf), ui->mensaje, 66), NK_TEXT_RIGHT,
                              ui->mensaje_error ? C_BAD : C_OK);
         nk_layout_row_end(ctx);
     }
@@ -490,6 +492,7 @@ void ui_draw(struct nk_context *ctx, bs_model *m, bs_ui *ui)
     panel_sidebar(ctx, m, ui);
     panel_main(ctx, m, ui);
 }
+
 
 
 

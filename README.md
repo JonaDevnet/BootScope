@@ -7,8 +7,17 @@ autoinicios, accesos remotos y hardware, y explica cada hallazgo con datos
 medidos. Interfaz nativa Win32 (Nuklear sobre GDI), sin .NET, sin Python y sin
 instalador: un solo `.exe`.
 
-> Estado: **v0.2.0 — dashboard e inventario funcionando.** El motor de acciones
-> llega en la próxima fase.
+> Estado: **v0.3.0 — análisis, inventario y acciones con respaldo y reversión.**
+
+## Fases
+
+| Fase | Contenido | Estado |
+|------|-----------|--------|
+| 0 | Esqueleto Win32 + Nuklear, build y licencia | ✅ |
+| 1 | Colectores (arranque, servicios, inicio, red, hardware) + JSON | ✅ |
+| 2 | Dashboard, timeline e inventario con datos reales | ✅ |
+| 3 | Motor de acciones: respaldo, aplicar, verificar, deshacer | ✅ |
+| 4 | Recomendador, documentación y pulido de release | ⬜ |
 
 ---
 
@@ -52,6 +61,23 @@ bootscope.exe --version
 
 El reporte JSON es el formato pensado para adjuntar a un issue: oculta IPs y
 datos del equipo salvo que se pida lo contrario.
+
+## Acciones
+
+1. Marcá con el checkbox los ítems de la tabla (o usá **Recomendados**).
+2. **Aplicar** ejecuta solo lo seleccionado y escribe antes un respaldo
+   `bootscope-backup-<fecha>.txt` junto al `.exe`.
+3. Cada acción se **verifica** releyendo el estado real: si el cambio no se
+   confirma, el ítem queda marcado en rojo.
+4. **Deshacer** revierte el último respaldo de esa sesión.
+
+| Riesgo | Ejemplo | Protección |
+|--------|---------|------------|
+| Seguro | servicio Auto → Manual, deshabilitar autoinicio | va al plan |
+| Moderado | deshabilitar un servicio de acceso remoto | confirmación |
+| Alto | bloquear RDP, deshabilitar Chrome Remote Desktop | confirmación + punto de restauración |
+
+Nunca se ofrecen Defender, el firewall, RPC/DCOM ni los servicios críticos.
 
 ## Seguridad
 
