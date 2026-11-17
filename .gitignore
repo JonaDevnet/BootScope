@@ -1,0 +1,23 @@
+# Build
+build/
+out/
+cmake-build-*/
+*.obj
+*.o
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.VC.db
+
+# Reportes generados
+*.report.json
+bootscope-backup-*.json

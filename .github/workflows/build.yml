@@ -1,0 +1,45 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows-msvc:
+    name: Windows / MSVC x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Compilar
+        run: cmake --build build --config Release --parallel
+
+      - name: Verificar binario
+        run: |
+          if (!(Test-Path build/Release/bootscope.exe)) { throw "No se genero bootscope.exe" }
+          Get-Item build/Release/bootscope.exe | Select-Object Name,Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootscope-msvc-x64
+          path: build/Release/bootscope.exe
+
+  windows-mingw:
+    name: Windows / MinGW-w64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar con gcc
+        shell: cmd
+        run: build-mingw.bat
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootscope-mingw-x64
+          path: build/bootscope.exe
