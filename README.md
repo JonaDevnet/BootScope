@@ -65,11 +65,14 @@ datos del equipo salvo que se pida lo contrario.
 ## Acciones
 
 1. Marcá con el checkbox los ítems de la tabla (o usá **Recomendados**).
-2. **Aplicar** ejecuta solo lo seleccionado y escribe antes un respaldo
+2. El botón **Recomendados** respeta el perfil elegido en la barra lateral:
+   *Conservador* (solo seguro), *Balanceado* (seguro + moderado) o *Agresivo*
+   (incluye alto).
+3. **Aplicar** ejecuta solo lo seleccionado y escribe antes un respaldo
    `bootscope-backup-<fecha>.txt` junto al `.exe`.
-3. Cada acción se **verifica** releyendo el estado real: si el cambio no se
+4. Cada acción se **verifica** releyendo el estado real: si el cambio no se
    confirma, el ítem queda marcado en rojo.
-4. **Deshacer** revierte el último respaldo de esa sesión.
+5. **Deshacer** revierte el último respaldo de esa sesión.
 
 | Riesgo | Ejemplo | Protección |
 |--------|---------|------------|
@@ -95,6 +98,13 @@ Nunca se ofrecen Defender, el firewall, RPC/DCOM ni los servicios críticos.
   anterior al handoff.
 - Sin privilegios de administrador se omiten SMART, el evento 100 de rendimiento
   y algunos servicios protegidos.
+
+## Documentación
+
+- [Catálogo de chequeos](docs/checks.md): qué detecta cada `check_id`, su riesgo y si es reversible.
+- [Arquitectura](docs/arquitectura.md): módulos y decisiones de diseño.
+- [Cómo contribuir](CONTRIBUTING.md).
+- [Seguridad](SECURITY.md).
 
 ## Licencia
 

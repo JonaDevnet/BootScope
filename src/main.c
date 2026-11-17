@@ -106,15 +106,19 @@ static void procesar_ui(void)
     }
     if (g_ui.pedir_recomendados) {
         int n = 0;
+        int cap = g_ui.perfil == 0 ? BS_RIESGO_SEGURO :
+                  (g_ui.perfil == 1 ? BS_RIESGO_MODERADO : BS_RIESGO_ALTO);
         g_ui.pedir_recomendados = 0;
         for (int i = 0; i < g_model.n_items; i++) {
             bs_item *it = &g_model.items[i];
-            if (it->recomendado && it->accion != BS_ACT_NINGUNA) {
+            if (it->recomendado && it->accion != BS_ACT_NINGUNA && it->riesgo <= cap) {
                 it->seleccionado = 1;
                 n++;
             }
         }
-        snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%d recomendados seleccionados", n);
+        snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%d recomendados seleccionados (perfil %s)",
+                 n, g_ui.perfil == 0 ? "conservador" :
+                    (g_ui.perfil == 1 ? "balanceado" : "agresivo"));
         g_ui.mensaje_error = 0;
     }
     if (g_ui.pedir_exportar) {
@@ -320,6 +324,7 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
     bs_model_init(&g_model);
     memset(&g_ui, 0, sizeof(g_ui));
     g_ui.tab = BS_TAB_RESUMEN;
+    g_ui.perfil = 1;   /* balanceado por defecto */
     {
         /* utilidad de pruebas: BS_TAB=0..5 abre directamente una pestana */
         const char *t = getenv("BS_TAB");

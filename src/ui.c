@@ -335,6 +335,19 @@ static void panel_sidebar(struct nk_context *ctx, bs_model *m, bs_ui *ui)
             nk_label_colored(ctx, buf, NK_TEXT_LEFT,
                              malos ? C_WARN : C_TEXT_DIM);
         }
+        nk_layout_row_dynamic(ctx, 12, 1);
+        nk_spacing(ctx, 1);
+        nk_layout_row_dynamic(ctx, 18, 1);
+        nk_label_colored(ctx, "Perfil del boton Recomendados", NK_TEXT_LEFT, C_TEXT);
+        {
+            static const char *perfiles[3] = { "Conservador", "Balanceado", "Agresivo" };
+            for (int p = 0; p < 3; p++) {
+                nk_bool ps = (ui->perfil == p) ? nk_true : nk_false;
+                nk_layout_row_dynamic(ctx, 22, 1);
+                if (nk_selectable_label(ctx, perfiles[p], NK_TEXT_LEFT, &ps))
+                    ui->perfil = p;
+            }
+        }
         nk_layout_row_dynamic(ctx, 10, 1);
         nk_spacing(ctx, 1);
         nk_layout_row_dynamic(ctx, 16, 1);
@@ -492,6 +505,7 @@ void ui_draw(struct nk_context *ctx, bs_model *m, bs_ui *ui)
     panel_sidebar(ctx, m, ui);
     panel_main(ctx, m, ui);
 }
+
 
 
 

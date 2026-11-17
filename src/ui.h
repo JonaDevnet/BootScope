@@ -1,4 +1,4 @@
-/*
+﻿/*
  * BootScope - interfaz
  * Copyright (c) 2026 Jonathan Rinaldi (JonaDevnet)
  * SPDX-License-Identifier: MIT
@@ -20,6 +20,7 @@ typedef struct {
     int  pedir_exportar;
     int  pedir_recomendados;
     int  pedir_deshacer;
+    int  perfil;            /* 0 conservador, 1 balanceado, 2 agresivo */
     char mensaje[256];
     int  mensaje_error;
 } bs_ui;
@@ -28,3 +29,4 @@ void ui_init_style(struct nk_context *ctx);
 void ui_draw(struct nk_context *ctx, bs_model *m, bs_ui *ui);
 
 #endif /* BS_UI_H */
+
