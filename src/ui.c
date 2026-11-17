@@ -314,6 +314,9 @@ static void panel_sidebar(struct nk_context *ctx, bs_model *m, bs_ui *ui)
         nk_layout_row_dynamic(ctx, 12, 1);
         nk_spacing(ctx, 1);
         for (int c = 0; c < BS_CAT_COUNT; c++) {
+            static const char *corto[BS_CAT_COUNT] = {
+                "Arranque", "Servicios", "Inicio", "Red", "Hardware"
+            };
             char buf[64];
             int n = 0, malos = 0;
             for (int i = 0; i < m->n_items; i++) {
@@ -323,9 +326,9 @@ static void panel_sidebar(struct nk_context *ctx, bs_model *m, bs_ui *ui)
             }
             if (!n) continue;
             if (malos)
-                snprintf(buf, sizeof(buf), "%d  (%d a revisar)", n, malos);
+                snprintf(buf, sizeof(buf), "%s: %d (%d)", corto[c], n, malos);
             else
-                snprintf(buf, sizeof(buf), "%d", n);
+                snprintf(buf, sizeof(buf), "%s: %d", corto[c], n);
             nk_layout_row_dynamic(ctx, 16, 1);
             nk_label_colored(ctx, buf, NK_TEXT_LEFT,
                              malos ? C_WARN : C_TEXT_DIM);
@@ -382,11 +385,11 @@ static void tab_resumen(struct nk_context *ctx, bs_model *m, bs_ui *ui)
         nk_spacing(ctx, 1);
         nk_layout_row_dynamic(ctx, 110, 1);
         if (nk_group_begin(ctx, "timeline", NK_WINDOW_BORDER)) {
-            double total = m->boot.firmware_s + m->boot.main_path_s;
+            double total = m->boot.firmware_s + wins;
             nk_layout_row_dynamic(ctx, 20, 1);
             nk_label_colored(ctx, "Donde se va el tiempo", NK_TEXT_LEFT, C_TEXT);
             fase(ctx, "Firmware / BIOS", m->boot.firmware_s, total);
-            fase(ctx, "Windows", m->boot.main_path_s, total);
+            fase(ctx, "Windows", wins, total);
             nk_group_end(ctx);
         }
     }

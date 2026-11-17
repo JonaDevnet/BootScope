@@ -7,8 +7,8 @@ autoinicios, accesos remotos y hardware, y explica cada hallazgo con datos
 medidos. Interfaz nativa Win32 (Nuklear sobre GDI), sin .NET, sin Python y sin
 instalador: un solo `.exe`.
 
-> Estado: **v0.1.0 — colectores y reporte JSON funcionando.** La interfaz ya
-> muestra los datos; el motor de acciones llega en la próxima fase.
+> Estado: **v0.2.0 — dashboard e inventario funcionando.** El motor de acciones
+> llega en la próxima fase.
 
 ---
 

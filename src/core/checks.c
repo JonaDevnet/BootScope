@@ -101,14 +101,16 @@ void checks_analyze(bs_model *m)
         for (int i = 0; i < m->n_discos; i++) {
             bs_disk *d = &m->discos[i];
             if (!d->sistema) continue;
-            if (bs_ci_contains(d->bus, "NVMe"))
-                hallazgo(m, BS_CAT_HARDWARE, BS_RIESGO_NULO, "hw.disco.sistema",
-                         "Windows en NVMe", d->modelo, "OK");
-            else
+            if (bs_ci_contains(d->bus, "NVMe")) {
+                bs_item *it = hallazgo(m, BS_CAT_HARDWARE, BS_RIESGO_NULO, "hw.disco.sistema",
+                                       "Windows en NVMe", d->modelo, "OK");
+                if (it) snprintf(it->estado, sizeof(it->estado), "OK");
+            } else {
                 hallazgo(m, BS_CAT_HARDWARE, BS_RIESGO_MODERADO, "hw.disco.sistema",
                          "Windows no esta en el NVMe",
                          "El sistema arranca desde un disco mas lento que el NVMe disponible.",
                          d->bus);
+            }
         }
     }
 }

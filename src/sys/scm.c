@@ -154,9 +154,9 @@ void scm_collect(bs_model *m)
                      ss[i].ServiceStatusProcess.dwCurrentState == SERVICE_RUNNING ? "Running" :
                      ss[i].ServiceStatusProcess.dwCurrentState == SERVICE_STOPPED ? "Stopped" : "Otro");
             snprintf(it->metrica, sizeof(it->metrica), "%s", tipo);
-            snprintf(it->edad, sizeof(it->edad), "pid %lu",
-                     (unsigned long)ss[i].ServiceStatusProcess.dwProcessId);
-            snprintf(it->detalle, sizeof(it->detalle), "%s", path);
+            snprintf(it->edad, sizeof(it->edad), "-");
+            snprintf(it->detalle, sizeof(it->detalle), "pid %lu  %s",
+                     (unsigned long)ss[i].ServiceStatusProcess.dwProcessId, path);
 
             if (es_de_windows(path) || servicio_protegido(nombre, path)) {
                 it->riesgo = BS_RIESGO_NULO;

@@ -7,7 +7,13 @@
 #define BS_APP_H
 
 #ifndef BS_VERSION
-#define BS_VERSION "0.0.1"
+#  if defined(BS_VER_MAJOR)
+#    define BS_STR2(x) #x
+#    define BS_STR(x) BS_STR2(x)
+#    define BS_VERSION BS_STR(BS_VER_MAJOR) "." BS_STR(BS_VER_MINOR) "." BS_STR(BS_VER_PATCH)
+#  else
+#    define BS_VERSION "0.0.1"
+#  endif
 #endif
 
 #define BS_MAX_ITEMS   512

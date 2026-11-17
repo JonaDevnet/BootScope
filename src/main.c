@@ -1,4 +1,4 @@
-/*
+﻿/*
  * BootScope - entrada Win32 y CLI
  * Copyright (c) 2026 Jonathan Rinaldi (JonaDevnet)
  * SPDX-License-Identifier: MIT
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
+#include <stdlib.h>
 
 #include "nuklear.h"
 #include "nuklear_gdi.h"
@@ -300,6 +301,14 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
     bs_model_init(&g_model);
     memset(&g_ui, 0, sizeof(g_ui));
     g_ui.tab = BS_TAB_RESUMEN;
+    {
+        /* utilidad de pruebas: BS_TAB=0..5 abre directamente una pestana */
+        const char *t = getenv("BS_TAB");
+        if (t) {
+            int v = atoi(t);
+            if (v >= 0 && v < BS_TAB_COUNT) g_ui.tab = v;
+        }
+    }
     bs_scan(&g_model);
     snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%d componentes analizados", g_model.n_items);
 
@@ -316,3 +325,4 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
     ReleaseDC(hwnd, g_dc);
     return 0;
 }
+

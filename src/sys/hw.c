@@ -86,11 +86,11 @@ static void smbios_parse(bs_model *m)
     unsigned char *tabla;
     int bios_anio = 0;
 
-    sz = GetSystemFirmwareTable('RSMB', 0, NULL, 0);
+    sz = GetSystemFirmwareTable(0x52534D42u, 0, NULL, 0);   /* 'RSMB' */
     if (sz < 16) return;
     buf = (unsigned char *)calloc(sz, 1);
     if (!buf) return;
-    if (GetSystemFirmwareTable('RSMB', 0, buf, sz) != sz) {
+    if (GetSystemFirmwareTable(0x52534D42u, 0, buf, sz) != sz) {
         free(buf);
         return;
     }
