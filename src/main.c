@@ -259,6 +259,13 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             nk_input_begin(g_ctx);
             while (consumidos < g_n_eventos) {
                 bs_event *e = &g_eventos[consumidos];
+                /* Nuklear no actualiza la posicion al hacer clic: si el usuario
+                   no movio el mouse antes, el clic caeria en (0,0). */
+                if (e->msg == WM_LBUTTONDOWN || e->msg == WM_LBUTTONUP ||
+                    e->msg == WM_RBUTTONDOWN || e->msg == WM_RBUTTONUP ||
+                    e->msg == WM_MBUTTONDOWN || e->msg == WM_MBUTTONUP ||
+                    e->msg == WM_LBUTTONDBLCLK)
+                    nk_input_motion(g_ctx, (short)LOWORD(e->lp), (short)HIWORD(e->lp));
                 nk_gdi_handle_event(hwnd, e->msg, e->wp, e->lp);
                 consumidos++;
                 /* un "down" necesita su propio frame para que Nuklear lo vea
@@ -276,10 +283,15 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 
             ui_draw(g_ctx, &g_model, &g_ui);
             nk_gdi_render(nk_rgb(24, 25, 28));
-            dbg_log("FRAME tab=%d fila=%d eventos=%d sel=%d\n", g_ui.tab, g_ui.fila_sel,
-                    g_n_eventos, contar_seleccionados());
+            dbg_log("FRAME tab=%d fila=%d eventos=%d sel=%d mouse=%d,%d down=%d\n",
+                    g_ui.tab, g_ui.fila_sel, g_n_eventos, contar_seleccionados(),
+                    (int)g_ctx->input.mouse.pos.x, (int)g_ctx->input.mouse.pos.y,
+                    (int)g_ctx->input.mouse.buttons[NK_BUTTON_LEFT].clicked);
             procesar_ui();
 
+            /* el area ya se dibujo completa: validarla evita repintados fantasma
+               y que el WM_PAINT se realimente */
+            ValidateRect(hwnd, NULL);
             if (g_n_eventos > 0)
                 InvalidateRect(hwnd, NULL, FALSE);
         }
@@ -445,7 +457,7 @@ static int selftest(void)
 
     /* 1) las 6 pestanas deben poder seleccionarse con un clic */
     memset(vistos, 0, sizeof(vistos));
-    for (y = 80; y <= 380; y += 2) {
+    for (y = 100; y <= 430; y += 2) {
         frame_clic(60, y);
         if (g_ui.tab >= 0 && g_ui.tab < BS_TAB_COUNT) vistos[g_ui.tab] = 1;
     }
@@ -465,11 +477,9 @@ static int selftest(void)
     frame_clic(60, 0);
     {
         int encontrado = 0;
-        for (y = 140; y <= 180 && !encontrado; y += 2) {
-            for (x = 200; x <= 260 && !encontrado; x += 2) {
-                frame_clic(x, y);
-                if (contar_seleccionados() > 0) encontrado = 1;
-            }
+        for (y = 150; y <= 600 && !encontrado; y += 4) {
+            frame_clic(222, y);
+            if (contar_seleccionados() > 0) encontrado = 1;
         }
         if (encontrado) st_log("OK: checkbox selecciona\n");
         else { st_log("FAIL: checkbox no selecciona\n"); fallos++; }
@@ -479,7 +489,7 @@ static int selftest(void)
     {
         int abierto = 0;
         g_ui.fila_sel = 0;
-        for (y = 140; y <= 175 && !abierto; y += 2) {
+        for (y = 150; y <= 230 && !abierto; y += 2) {
             frame_clic(420, y);
             if (g_ui.fila_sel != 0) abierto = 1;
         }
@@ -506,7 +516,7 @@ static int selftest(void)
     /* 5) selector de perfil */
     {
         int vistos_p[3] = { 0, 0, 0 };
-        for (y = 540; y <= 700; y += 4) {
+        for (y = 560; y <= 760; y += 4) {
             frame_clic(60, y);
             if (g_ui.perfil >= 0 && g_ui.perfil < 3) vistos_p[g_ui.perfil] = 1;
         }
@@ -536,7 +546,7 @@ static int selftest(void)
         st_log("OK: Exportar (%s)\n", g_ui.mensaje);
     } else { st_log("FAIL: el clic no llego a Exportar\n"); fallos++; }
 
-    /* 8) boton Seleccionar todo en Servicios */
+    /* 8) boton Marcar visibles en Servicios */
     {
         int total_cat = 0, ok = 0;
         g_ui.tab = 2;
@@ -545,12 +555,27 @@ static int selftest(void)
             if (g_model.items[i].cat == BS_CAT_SERVICIOS &&
                 g_model.items[i].accion != BS_ACT_NINGUNA) total_cat++;
         frame_clic(60, 0);
-        for (y = 460; y <= 570 && !ok; y += 4) {
-            frame_clic(330, y);
+        for (y = 430; y <= 560 && !ok; y += 4) {
+            frame_clic(315, y);
             if (contar_seleccionados() == total_cat && total_cat > 0) ok = 1;
         }
-        if (ok) st_log("OK: Seleccionar todo (%d servicios)\n", total_cat);
-        else { st_log("FAIL: Seleccionar todo no selecciono los %d\n", total_cat); fallos++; }
+        if (ok) st_log("OK: Marcar visibles (%d servicios)\n", total_cat);
+        else { st_log("FAIL: Marcar visibles no selecciono los %d\n", total_cat); fallos++; }
+    }
+
+    /* 9) clic en una fila (no en el checkbox) tambien marca */
+    {
+        int antes, despues = 0;
+        g_ui.tab = 2;
+        for (int i = 0; i < g_model.n_items; i++) g_model.items[i].seleccionado = 0;
+        frame_clic(60, 0);
+        antes = contar_seleccionados();
+        for (y = 150; y <= 600 && despues == 0; y += 4) {
+            frame_clic(400, y);
+            despues = contar_seleccionados();
+        }
+        if (despues > antes) st_log("OK: clic en la fila marca (%d)\n", despues);
+        else { st_log("FAIL: el clic en la fila no marca\n"); fallos++; }
     }
 
     st_log("RESULTADO: %s (%d fallos)\n", fallos ? "FALLO" : "PASS", fallos);    if (g_st_log) { fclose(g_st_log); g_st_log = NULL; }
@@ -655,6 +680,7 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
     ReleaseDC(hwnd, g_dc);
     return 0;
 }
+
 
 
 

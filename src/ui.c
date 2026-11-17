@@ -11,7 +11,7 @@
 #define BS_WIN_W 1280
 #define BS_WIN_H 820
 #define BS_SIDEBAR 196.0f
-#define BS_HEADER  68.0f
+#define BS_HEADER  96.0f
 
 /* ------------------------------------------------------------------ */
 static const struct nk_color C_BG       = { 24, 25, 28, 255 };
@@ -75,6 +75,21 @@ static struct nk_color puntaje_color(int p)
     if (p >= 80) return C_OK;
     if (p >= 55) return C_WARN;
     return C_BAD;
+}
+
+/* que hace exactamente "Aplicar" sobre este item */
+static const char *accion_texto(const bs_item *it)
+{
+    switch (it->accion) {
+    case BS_ACT_SERVICIO_MANUAL:        return "pasar a Manual";
+    case BS_ACT_SERVICIO_DESHABILITAR:  return "deshabilitar";
+    case BS_ACT_SERVICIO_DETENER:       return "detener";
+    case BS_ACT_AUTOINICIO_DESHABILITAR:return "quitar del inicio";
+    case BS_ACT_RDP_DESHABILITAR:       return "bloquear RDP";
+    case BS_ACT_PROCESO_TERMINAR:       return "terminar proceso";
+    default:
+        return bs_ci_contains(it->resultado, "protegido") ? "protegido" : "solo aviso";
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -168,56 +183,68 @@ static void fase(struct nk_context *ctx, const char *nombre, double seg, double 
 /* ------------------------------------------------------------------ */
 static void cabecera_tabla(struct nk_context *ctx)
 {
-    nk_layout_row_begin(ctx, NK_DYNAMIC, 20, 7);
-    nk_layout_row_push(ctx, 0.040f); nk_label(ctx, "", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.300f); nk_label(ctx, "Componente", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.130f); nk_label(ctx, "Estado", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.110f); nk_label(ctx, "Dato", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.110f); nk_label(ctx, "Edad", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.120f); nk_label(ctx, "Riesgo", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.190f); nk_label(ctx, "Accion", NK_TEXT_LEFT);
+    nk_layout_row_begin(ctx, NK_DYNAMIC, 22, 7);
+    nk_layout_row_push(ctx, 0.050f); nk_label(ctx, "", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.290f); nk_label(ctx, "Componente (clic para marcar)", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.120f); nk_label(ctx, "Estado", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.100f); nk_label(ctx, "Dato", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.100f); nk_label(ctx, "Edad", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.100f); nk_label(ctx, "Riesgo", NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.240f); nk_label(ctx, "Al aplicar", NK_TEXT_LEFT);
     nk_layout_row_end(ctx);
 }
 
 static void fila_item(struct nk_context *ctx, bs_model *m, bs_ui *ui, bs_item *it)
 {
     char b1[240], b2[96];
+    int accionable = (it->accion != BS_ACT_NINGUNA);
     nk_bool sel = (ui->fila_sel == it->id) ? nk_true : nk_false;
 
-    nk_layout_row_begin(ctx, NK_DYNAMIC, 26, 7);
-    nk_layout_row_push(ctx, 0.040f);
-    {
+    nk_layout_row_begin(ctx, NK_DYNAMIC, 28, 7);
+
+    /* columna 1: checkbox solo si el item se puede cambiar */
+    nk_layout_row_push(ctx, 0.050f);
+    if (accionable) {
         nk_bool chk = it->seleccionado ? nk_true : nk_false;
-        if (nk_checkbox_label(ctx, "", &chk))
+        if (nk_checkbox_label(ctx, "", &chk)) {
             it->seleccionado = chk ? 1 : 0;
+            ui->fila_sel = it->id;
+        }
+    } else {
+        nk_label_colored(ctx, "-", NK_TEXT_CENTERED, C_TEXT_DIM);
     }
-    nk_layout_row_push(ctx, 0.300f);
-    if (nk_selectable_label(ctx, clip(b1, sizeof(b1), it->titulo, 44), NK_TEXT_LEFT, &sel))
-        ui->fila_sel = (ui->fila_sel == it->id) ? 0 : it->id;
-    nk_layout_row_push(ctx, 0.130f);
-    nk_label_colored(ctx, clip(b2, sizeof(b2), it->estado, 16), NK_TEXT_LEFT,
-                     estado_color(it->estado, it->riesgo));
-    nk_layout_row_push(ctx, 0.110f);
-    nk_label(ctx, clip(b2, sizeof(b2), it->metrica, 12), NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.110f);
-    nk_label(ctx, clip(b2, sizeof(b2), it->edad, 12), NK_TEXT_LEFT);
+
+    /* columna 2: el nombre tambien marca/desmarca y abre el detalle */
+    nk_layout_row_push(ctx, 0.290f);
+    if (nk_selectable_label(ctx, clip(b1, sizeof(b1), it->titulo, 42), NK_TEXT_LEFT, &sel)) {
+        ui->fila_sel = it->id;
+        if (accionable)
+            it->seleccionado = it->seleccionado ? 0 : 1;
+    }
+
     nk_layout_row_push(ctx, 0.120f);
+    nk_label_colored(ctx, clip(b2, sizeof(b2), it->estado, 14), NK_TEXT_LEFT,
+                     estado_color(it->estado, it->riesgo));
+    nk_layout_row_push(ctx, 0.100f);
+    nk_label(ctx, clip(b2, sizeof(b2), it->metrica, 11), NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.100f);
+    nk_label(ctx, clip(b2, sizeof(b2), it->edad, 11), NK_TEXT_LEFT);
+    nk_layout_row_push(ctx, 0.100f);
     nk_label_colored(ctx, bs_riesgo_nombre(it->riesgo), NK_TEXT_LEFT,
                      riesgo_color(it->riesgo));
-    nk_layout_row_push(ctx, 0.190f);
-    if (it->aplicado == 1) {
+    nk_layout_row_push(ctx, 0.240f);
+    if (it->aplicado == 1)
         nk_label_colored(ctx, it->resultado[0] ? it->resultado : "aplicado",
                          NK_TEXT_LEFT, C_OK);
-    } else if (it->aplicado < 0) {
-        nk_label_colored(ctx, clip(b2, sizeof(b2), it->resultado, 22), NK_TEXT_LEFT, C_BAD);
-    } else if (it->accion == BS_ACT_NINGUNA) {
-        nk_label_colored(ctx, bs_ci_contains(it->resultado, "protegido") ? "protegido" : "solo aviso",
-                         NK_TEXT_LEFT, C_TEXT_DIM);
-    } else if (it->recomendado) {
-        nk_label_colored(ctx, "recomendado", NK_TEXT_LEFT, C_ACCENT);
-    } else {
-        nk_label_colored(ctx, "aplicable", NK_TEXT_LEFT, C_TEXT_DIM);
-    }
+    else if (it->aplicado < 0)
+        nk_label_colored(ctx, clip(b2, sizeof(b2), it->resultado, 20), NK_TEXT_LEFT, C_BAD);
+    else if (!accionable)
+        nk_label_colored(ctx, accion_texto(it), NK_TEXT_LEFT, C_TEXT_DIM);
+    else if (it->seleccionado)
+        nk_label_colored(ctx, accion_texto(it), NK_TEXT_LEFT, C_ACCENT);
+    else
+        nk_label_colored(ctx, accion_texto(it), NK_TEXT_LEFT, C_TEXT);
+
     nk_layout_row_end(ctx);
     (void)m;
 }
@@ -233,7 +260,7 @@ static void panel_detalle(struct nk_context *ctx, bs_model *m, bs_ui *ui)
 
     nk_layout_row_dynamic(ctx, 8, 1);
     nk_spacing(ctx, 1);
-    nk_layout_row_dynamic(ctx, 128, 1);
+    nk_layout_row_dynamic(ctx, 112, 1);
     if (nk_group_begin(ctx, "detalle", NK_WINDOW_BORDER)) {
         nk_layout_row_dynamic(ctx, 20, 1);
         nk_label_colored(ctx, clip(b1, sizeof(b1), it->titulo, 90), NK_TEXT_LEFT, C_TEXT);
@@ -280,23 +307,30 @@ static void panel_header(struct nk_context *ctx, bs_model *m, bs_ui *ui)
         nk_layout_row_end(ctx);
 
         nk_layout_row_begin(ctx, NK_DYNAMIC, 26, 6);
-        nk_layout_row_push(ctx, 0.14f);
+        nk_layout_row_push(ctx, 0.13f);
         if (nk_button_label(ctx, "Escanear")) ui->pedir_escaneo = 1;
-        nk_layout_row_push(ctx, 0.14f);
+        nk_layout_row_push(ctx, 0.15f);
         snprintf(buf, sizeof(buf), "Recomendados (%d)", rec);
         if (nk_button_label(ctx, buf)) ui->pedir_recomendados = 1;
         nk_layout_row_push(ctx, 0.14f);
         snprintf(buf, sizeof(buf), "Aplicar (%d)", sel);
         if (nk_button_label(ctx, buf)) ui->pedir_aplicar = 1;
-        nk_layout_row_push(ctx, 0.14f);
+        nk_layout_row_push(ctx, 0.13f);
         if (nk_button_label(ctx, "Deshacer")) ui->pedir_deshacer = 1;
-        nk_layout_row_push(ctx, 0.14f);
+        nk_layout_row_push(ctx, 0.13f);
         if (nk_button_label(ctx, "Exportar")) ui->pedir_exportar = 1;
-        nk_layout_row_push(ctx, 0.30f);
+        nk_layout_row_push(ctx, 0.32f);
         if (ui->mensaje[0])
-            nk_label_colored(ctx, clip(buf, sizeof(buf), ui->mensaje, 66), NK_TEXT_RIGHT,
+            nk_label_colored(ctx, clip(buf, sizeof(buf), ui->mensaje, 70), NK_TEXT_RIGHT,
                              ui->mensaje_error ? C_BAD : C_OK);
         nk_layout_row_end(ctx);
+
+        nk_layout_row_dynamic(ctx, 18, 1);
+        nk_label_colored(ctx,
+            "1) Clic en una fila para marcarla.  2) Aplicar ejecuta lo marcado.  "
+            "3) Deshacer lo revierte.  \"Recomendados\" marca solo lo que la app "
+            "considera seguro segun el perfil.",
+            NK_TEXT_LEFT, C_TEXT_DIM);
     }
     nk_end(ctx);
 }
@@ -414,7 +448,7 @@ static void tab_resumen(struct nk_context *ctx, bs_model *m, bs_ui *ui)
     nk_layout_row_dynamic(ctx, 22, 1);
     nk_label_colored(ctx, "Hallazgos principales", NK_TEXT_LEFT, C_TEXT);
     cabecera_tabla(ctx);
-    nk_layout_row_dynamic(ctx, 230, 1);
+    nk_layout_row_dynamic(ctx, 210, 1);
     if (nk_group_begin(ctx, "hallazgos", NK_WINDOW_BORDER)) {
         int mostrados = 0;
         for (int i = 0; i < m->n_items && mostrados < 12; i++) {
@@ -450,7 +484,7 @@ static void tab_categoria(struct nk_context *ctx, bs_model *m, int tab, bs_ui *u
     nk_label_colored(ctx, buf, NK_TEXT_LEFT, C_TEXT);
 
     cabecera_tabla(ctx);
-    nk_layout_row_dynamic(ctx, 330, 1);
+    nk_layout_row_dynamic(ctx, 296, 1);
     if (nk_group_begin(ctx, "tabla_cat", NK_WINDOW_BORDER)) {
         for (int i = 0; i < m->n_items; i++) {
             if (m->items[i].cat != cat) continue;
@@ -464,23 +498,37 @@ static void tab_categoria(struct nk_context *ctx, bs_model *m, int tab, bs_ui *u
         nk_group_end(ctx);
     }
 
-    nk_layout_row_begin(ctx, NK_DYNAMIC, 24, 4);
+    nk_layout_row_begin(ctx, NK_DYNAMIC, 26, 4);
     nk_layout_row_push(ctx, 0.20f);
-    if (nk_button_label(ctx, "Seleccionar todo")) {
+    if (nk_button_label(ctx, "Marcar visibles")) {
         for (int i = 0; i < m->n_items; i++)
             if (m->items[i].cat == cat && m->items[i].accion != BS_ACT_NINGUNA)
                 m->items[i].seleccionado = 1;
     }
-    nk_layout_row_push(ctx, 0.16f);
-    if (nk_button_label(ctx, "Nada")) {
+    nk_layout_row_push(ctx, 0.20f);
+    if (nk_button_label(ctx, "Desmarcar")) {
         for (int i = 0; i < m->n_items; i++)
             if (m->items[i].cat == cat)
                 m->items[i].seleccionado = 0;
     }
+    nk_layout_row_push(ctx, 0.26f);
+    {
+        int rec = 0;
+        for (int i = 0; i < m->n_items; i++)
+            if (m->items[i].cat == cat && m->items[i].recomendado &&
+                m->items[i].accion != BS_ACT_NINGUNA) rec++;
+        snprintf(buf, sizeof(buf), "Recomendados (%d)", rec);
+        if (nk_button_label(ctx, buf)) ui->pedir_recomendados = 1;
+    }
     nk_layout_row_push(ctx, 0.34f);
-    nk_label(ctx, "", NK_TEXT_LEFT);
-    nk_layout_row_push(ctx, 0.30f);
-    nk_label(ctx, "", NK_TEXT_LEFT);
+    {
+        int sel_cat = 0;
+        for (int i = 0; i < m->n_items; i++)
+            if (m->items[i].cat == cat && m->items[i].seleccionado &&
+                m->items[i].accion != BS_ACT_NINGUNA) sel_cat++;
+        snprintf(buf, sizeof(buf), "Aplicar %d cambio%s", sel_cat, sel_cat == 1 ? "" : "s");
+        if (nk_button_label(ctx, buf)) ui->pedir_aplicar = 1;
+    }
     nk_layout_row_end(ctx);
 
     panel_detalle(ctx, m, ui);
@@ -505,6 +553,7 @@ void ui_draw(struct nk_context *ctx, bs_model *m, bs_ui *ui)
     panel_sidebar(ctx, m, ui);
     panel_main(ctx, m, ui);
 }
+
 
 
 

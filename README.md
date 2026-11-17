@@ -62,21 +62,33 @@ bootscope.exe --version
 El reporte JSON es el formato pensado para adjuntar a un issue: oculta IPs y
 datos del equipo salvo que se pida lo contrario.
 
-## Acciones
+## Cómo se usa
 
-1. Marcá con el checkbox los ítems de la tabla (o usá **Recomendados**).
-2. El botón **Recomendados** respeta el perfil elegido en la barra lateral:
-   *Conservador* (solo seguro), *Balanceado* (seguro + moderado) o *Agresivo*
-   (incluye alto).
-3. **Aplicar** ejecuta solo lo seleccionado y escribe antes un respaldo
-   `bootscope-backup-<fecha>.txt` junto al `.exe`.
-4. Cada acción se **verifica** releyendo el estado real: si el cambio no se
-   confirma, el ítem queda marcado en rojo.
-5. **Deshacer** revierte el último respaldo de esa sesión.
+La app tiene tres momentos: **medir → marcar → aplicar**.
+
+1. **Escanear** (arriba a la izquierda): analiza el equipo y arma el inventario.
+2. **Marcar**: hacé clic sobre el **nombre de una fila** o sobre su casilla. Las
+   filas con `-` no se pueden cambiar (son de Windows o solo informativas) y la
+   columna **"Al aplicar"** dice exactamente qué va a pasar: *pasar a Manual*,
+   *deshabilitar*, *quitar del inicio*, *bloquear RDP* o *solo aviso*.
+3. **Aplicar (N)**: ejecuta **únicamente lo marcado**. Antes escribe un respaldo
+   y después verifica cada cambio releyendo el estado real.
+4. **Deshacer** revierte el último respaldo de la sesión.
+
+**Recomendados (N)** no aplica nada: solo **marca** los ítems que la app
+considera seguros de cambiar, según el perfil de la barra lateral.
+
+| Perfil | Qué marca |
+|---|---|
+| Conservador | solo riesgo bajo (pasar servicios a Manual) |
+| Balanceado | + accesos remotos (Chrome Remote Desktop, etc.) |
+| Agresivo | todo lo accionable |
+
+Después de pulsarlo, revisá la selección y recién ahí **Aplicar**.
 
 | Riesgo | Ejemplo | Protección |
 |--------|---------|------------|
-| Seguro | servicio Auto → Manual, deshabilitar autoinicio | va al plan |
+| Seguro | servicio Auto → Manual, quitar autoinicio | va al plan |
 | Moderado | deshabilitar un servicio de acceso remoto | confirmación |
 | Alto | bloquear RDP, deshabilitar Chrome Remote Desktop | confirmación + punto de restauración |
 
