@@ -60,6 +60,7 @@ typedef struct {
     char        target[300];    /* objeto real sobre el que actua */
     char        prev[80];       /* estado previo para poder deshacer */
     int         seleccionado;
+    int         recomendado;    /* preseleccion del perfil Recomendado */
     int         aplicado;       /* 0 pendiente, 1 ok, -1 error */
     char        resultado[160]; /* mensaje post-aplicacion */
 } bs_item;
@@ -70,9 +71,11 @@ typedef struct {
     double firmware_s;      /* tiempo de firmware/UEFI (evento Kernel-Boot 30) */
     double main_path_s;     /* fase critica (Diagnostics-Performance 100) */
     double kernel_desktop_s;/* kernel -> escritorio */
-    int    fast_startup_ok; /* 0 = roto */
+    int    fast_startup_ok; /* 0 = roto, 1 = ok */
+    int    fast_startup_known; /* 1 si pudimos leer el evento 29 */
     char   fast_startup_err[32];
     int    apagado_sucio;
+    char   drivers_fallidos[160];
 } bs_boot;
 
 typedef struct {
@@ -97,9 +100,10 @@ typedef struct {
     char bus[16];        /* NVMe / SATA */
     char tipo[8];        /* HDD / SSD */
     char estado[24];
-    char salud[64];      /* temperatura, % usado, errores */
+    char salud[96];      /* temperatura, % usado, errores */
     char edad[48];       /* horas encendido, ciclos */
     unsigned long long bytes;
+    int  sistema;        /* 1 si contiene la unidad del sistema */
 } bs_disk;
 
 typedef struct {

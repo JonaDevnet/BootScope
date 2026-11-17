@@ -14,9 +14,11 @@
 
 typedef struct {
     int  tab;
+    int  fila_sel;          /* id del item cuyo detalle se muestra */
     int  pedir_escaneo;
     int  pedir_aplicar;
     int  pedir_exportar;
+    int  pedir_recomendados;
     int  pedir_deshacer;
     char mensaje[256];
     int  mensaje_error;

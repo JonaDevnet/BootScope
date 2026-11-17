@@ -1,18 +1,23 @@
 /*
- * BootScope - entrada Win32
+ * BootScope - entrada Win32 y CLI
  * Copyright (c) 2026 Jonathan Rinaldi (JonaDevnet)
  * SPDX-License-Identifier: MIT
  */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
 #include <stdio.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "nuklear.h"
 #include "nuklear_gdi.h"
 
 #include "app.h"
 #include "ui.h"
+#include "core/scan.h"
+#include "core/checks.h"
+#include "sys/util.h"
 
 #define BS_WIN_W 1280
 #define BS_WIN_H 820
@@ -22,43 +27,128 @@ static GdiFont            *g_font;
 static bs_model            g_model;
 static bs_ui               g_ui;
 static HDC                 g_dc;
-static int                 g_cli = 0;
 
 /* ------------------------------------------------------------------ */
-static void cli_out(const char *texto)
+static void ruta_reporte(char *dst, size_t dstsz)
 {
-    if (!g_cli) return;
-    fputs(texto, stdout);
-    fputc('\n', stdout);
-    fflush(stdout);
+    wchar_t exe[MAX_PATH];
+    wchar_t *barra;
+    char dir[MAX_PATH * 2];
+
+    if (!GetModuleFileNameW(NULL, exe, MAX_PATH)) {
+        snprintf(dst, dstsz, "bootscope-report.json");
+        return;
+    }
+    barra = wcsrchr(exe, L'\\');
+    if (barra) *barra = 0;
+    bs_u8(exe, dir, sizeof(dir));
+    snprintf(dst, dstsz, "%s\\bootscope-report.json", dir);
 }
 
-static int revisar_cli(void)
+static void consola(void)
 {
-    const char *cmd = GetCommandLineA();
-    if (!cmd) return 1;
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+        AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+    SetConsoleOutputCP(CP_UTF8);
+}
 
-    if (strstr(cmd, "--help") || strstr(cmd, "-h")) {
-        g_cli = 1;
-        AttachConsole(ATTACH_PARENT_PROCESS);
-        freopen("CONOUT$", "w", stdout);
-        cli_out("BootScope " BS_VERSION " - analizador de arranque y estado de Windows");
-        cli_out("");
-        cli_out("Uso: bootscope.exe [opciones]");
-        cli_out("  --version       muestra la version y sale");
-        cli_out("  --help          esta ayuda");
-        cli_out("");
-        cli_out("Sin opciones abre la interfaz grafica.");
-        return 0;
+static void imprimir_resumen(const bs_model *m)
+{
+    printf("BootScope %s\n", bs_version());
+    printf("%s  %s\n", m->os_nombre, m->os_build);
+    printf("Privilegios: %s\n\n", m->admin ? "administrador" : "usuario (datos limitados)");
+
+    if (m->boot.valido) {
+        double wins = m->boot.main_path_s > 0 ? m->boot.main_path_s : m->boot.kernel_desktop_s;
+        printf("Arranque: firmware %.1f s + Windows %.1f s = %.1f s   (inicio rapido: %s)\n",
+               m->boot.firmware_s, wins, m->boot.firmware_s + wins,
+               !m->boot.fast_startup_known ? "sin dato" :
+               (m->boot.fast_startup_ok ? "ok" :
+               (m->boot.fast_startup_err[0] ? m->boot.fast_startup_err : "roto")));
+    } else {
+        printf("Arranque: sin mediciones disponibles\n");
     }
-    if (strstr(cmd, "--version") || strstr(cmd, "-v")) {
-        g_cli = 1;
-        AttachConsole(ATTACH_PARENT_PROCESS);
-        freopen("CONOUT$", "w", stdout);
-        cli_out("BootScope " BS_VERSION);
-        return 0;
+
+    printf("Puntaje: %d/100  (%s)\n\n", m->puntaje, m->resumen);
+
+    printf("Hallazgos:\n");
+    for (int i = 0; i < m->n_items; i++) {
+        const bs_item *it = &m->items[i];
+        if (it->riesgo < BS_RIESGO_MODERADO) continue;
+        printf("  [%-9s] %-42s %s\n", bs_riesgo_nombre(it->riesgo),
+               it->titulo, it->metrica);
+        if (it->detalle[0]) printf("              %s\n", it->detalle);
     }
-    return 1;
+    printf("\n");
+}
+
+static void lista_items(const bs_model *m, bs_cat cat)
+{
+    printf("== %s ==\n", bs_cat_nombre(cat));
+    for (int i = 0; i < m->n_items; i++) {
+        const bs_item *it = &m->items[i];
+        if (it->cat != cat) continue;
+        printf("  %-40s %-12s %-10s %s\n", it->titulo, it->estado,
+               it->metrica, it->edad);
+    }
+    printf("\n");
+}
+
+/* ------------------------------------------------------------------ */
+static void procesar_ui(void)
+{
+    if (g_ui.pedir_escaneo) {
+        g_ui.pedir_escaneo = 0;
+        bs_scan(&g_model);
+        g_ui.fila_sel = 0;
+        snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "Escaneo listo: %d componentes",
+                 g_model.n_items);
+        g_ui.mensaje_error = 0;
+    }
+    if (g_ui.pedir_recomendados) {
+        int n = 0;
+        g_ui.pedir_recomendados = 0;
+        for (int i = 0; i < g_model.n_items; i++) {
+            bs_item *it = &g_model.items[i];
+            if (it->recomendado && it->accion != BS_ACT_NINGUNA) {
+                it->seleccionado = 1;
+                n++;
+            }
+        }
+        snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%d recomendados seleccionados", n);
+        g_ui.mensaje_error = 0;
+    }
+    if (g_ui.pedir_exportar) {
+        char ruta[MAX_PATH * 2];
+        g_ui.pedir_exportar = 0;
+        ruta_reporte(ruta, sizeof(ruta));
+        if (report_write(&g_model, ruta, 1))
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "Reporte guardado junto al .exe");
+        else
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "No se pudo escribir el reporte");
+        g_ui.mensaje_error = 0;
+    }
+    if (g_ui.pedir_aplicar) {
+        int n = 0;
+        g_ui.pedir_aplicar = 0;
+        for (int i = 0; i < g_model.n_items; i++)
+            if (g_model.items[i].seleccionado && g_model.items[i].accion != BS_ACT_NINGUNA) n++;
+        if (!n) {
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "No hay nada seleccionado");
+            g_ui.mensaje_error = 1;
+        } else if (!g_model.admin) {
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje),
+                     "Requiere administrador: cerra y volve a abrir como admin");
+            g_ui.mensaje_error = 1;
+        } else {
+            snprintf(g_ui.mensaje, sizeof(g_ui.mensaje),
+                     "Motor de acciones disponible en la fase 3");
+            g_ui.mensaje_error = 0;
+        }
+    }
+    InvalidateRect(GetActiveWindow(), NULL, FALSE);
 }
 
 /* ------------------------------------------------------------------ */
@@ -71,13 +161,13 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
-        HDC dc = BeginPaint(hwnd, &ps);
+        BeginPaint(hwnd, &ps);
         if (g_ctx) {
             ui_draw(g_ctx, &g_model, &g_ui);
             nk_gdi_render(nk_rgb(24, 25, 28));
+            procesar_ui();
         }
         EndPaint(hwnd, &ps);
-        (void)dc;
         return 0;
     }
 
@@ -104,16 +194,77 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 }
 
 /* ------------------------------------------------------------------ */
+static int modo_consola(int argc, wchar_t **argv)
+{
+    int i;
+    const wchar_t *report = NULL;
+    int scan = 0, salir = 0, redact = 1;
+
+    for (i = 1; i < argc; i++) {
+        if (!wcscmp(argv[i], L"--help") || !wcscmp(argv[i], L"-h")) {
+            consola();
+            printf("BootScope %s - analizador de arranque y estado de Windows\n\n", bs_version());
+            printf("Uso: bootscope.exe [opciones]\n");
+            printf("  --scan            analiza e imprime un resumen\n");
+            printf("  --report [ruta]   analiza y escribe un JSON (por defecto junto al .exe)\n");
+            printf("  --no-redact       no oculta IPs ni datos del equipo en el JSON\n");
+            printf("  --version         version\n");
+            printf("  --help            esta ayuda\n\n");
+            printf("Sin opciones abre la interfaz grafica.\n");
+            return 1;
+        }
+        if (!wcscmp(argv[i], L"--version") || !wcscmp(argv[i], L"-v")) {
+            consola();
+            printf("BootScope %s\n", bs_version());
+            return 1;
+        }
+        if (!wcscmp(argv[i], L"--scan")) { scan = 1; salir = 1; }
+        if (!wcscmp(argv[i], L"--report")) {
+            salir = 1;
+            if (i + 1 < argc && argv[i + 1][0] != L'-') report = argv[++i];
+        }
+        if (!wcscmp(argv[i], L"--no-redact")) redact = 0;
+    }
+
+    if (salir) {
+        bs_model m;
+        char ruta[MAX_PATH * 2];
+        consola();
+        bs_scan(&m);
+        if (report) {
+            bs_u8(report, ruta, sizeof(ruta));
+        } else {
+            ruta_reporte(ruta, sizeof(ruta));
+        }
+        if (report_write(&m, ruta, redact))
+            printf("Reporte JSON: %s\n", ruta);
+        else
+            printf("ERROR: no se pudo escribir %s\n", ruta);
+        if (scan) imprimir_resumen(&m);
+        return 1;
+    }
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
 int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
 {
     WNDCLASSA wc;
     HWND hwnd;
     MSG msg;
     RECT rc;
+    int argc = 0;
+    wchar_t **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
     (void)prev; (void)cmdline;
 
-    if (!revisar_cli()) return 0;
+    if (argv && argc > 1) {
+        int salida = modo_consola(argc, argv);
+        LocalFree(argv);
+        if (salida) return 0;
+    } else if (argv) {
+        LocalFree(argv);
+    }
 
     SetProcessDPIAware();
 
@@ -149,6 +300,8 @@ int WINAPI WinMain(HINSTANCE hinst, HINSTANCE prev, LPSTR cmdline, int show)
     bs_model_init(&g_model);
     memset(&g_ui, 0, sizeof(g_ui));
     g_ui.tab = BS_TAB_RESUMEN;
+    bs_scan(&g_model);
+    snprintf(g_ui.mensaje, sizeof(g_ui.mensaje), "%d componentes analizados", g_model.n_items);
 
     ShowWindow(hwnd, show);
     UpdateWindow(hwnd);

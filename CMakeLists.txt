@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
-project(BootScope VERSION 0.0.1 LANGUAGES C)
+﻿cmake_minimum_required(VERSION 3.16)
+project(BootScope VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -9,6 +9,18 @@ set(BS_SOURCES
     src/app.c
     src/ui.c
     src/nk_impl.c
+    src/sys/util.c
+    src/sys/osinfo.c
+    src/sys/boot.c
+    src/sys/scm.c
+    src/sys/startup.c
+    src/sys/net.c
+    src/sys/remote.c
+    src/sys/hw.c
+    src/core/scan.c
+    src/core/checks.c
+    src/core/score.c
+    src/core/report.c
 )
 
 add_executable(bootscope WIN32 ${BS_SOURCES})
@@ -20,7 +32,6 @@ target_include_directories(bootscope PRIVATE
 
 target_compile_definitions(bootscope PRIVATE
     BS_VERSION="${PROJECT_VERSION}"
-    UNICODE_DISABLED
 )
 
 target_link_libraries(bootscope PRIVATE
@@ -29,6 +40,10 @@ target_link_libraries(bootscope PRIVATE
     msimg32
     shell32
     advapi32
+    wevtapi
+    iphlpapi
+    ws2_32
+    ole32
 )
 
 if(MSVC)
@@ -39,3 +54,4 @@ else()
 endif()
 
 install(TARGETS bootscope RUNTIME DESTINATION .)
+
