@@ -4,8 +4,7 @@
 
 BootScope mide dónde se va el tiempo cuando encendés la PC, inventaría servicios,
 autoinicios, accesos remotos y hardware, y explica cada hallazgo con datos
-medidos. Interfaz nativa Win32 (Nuklear sobre GDI), sin .NET, sin Python y sin
-instalador: un solo `.exe`.
+medidos. Interfaz nativa Win32 (Nuklear sobre GDI)
 
 > Estado: **v0.3.0 — análisis, inventario y acciones con respaldo y reversión.**
 
