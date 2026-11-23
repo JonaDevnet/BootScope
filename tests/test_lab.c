@@ -302,7 +302,20 @@ static void probar_respaldo(void)
 
 int main(void)
 {
+    const char *lab = getenv("BS_LAB");
+    const char *usuario = getenv("USERNAME");
+
     printf("BootScope lab - motor de acciones\n");
+
+    /* doble candado: solo corre en Windows Sandbox o con BS_LAB=1 explicito */
+    if ((!lab || strcmp(lab, "1") != 0) &&
+        (!usuario || _stricmp(usuario, "WDAGUtilityAccount") != 0)) {
+        printf("\n  Este binario crea y borra servicios, toca autoinicios y RDP.\n");
+        printf("  Solo debe correr dentro de Windows Sandbox o una VM.\n");
+        printf("  Si es a proposito: defini la variable BS_LAB=1\n\n");
+        return 3;
+    }
+
     printf("admin=%d\n", bs_is_admin());
     if (!bs_is_admin()) {
         printf("RESULTADO: FALLO (se necesita administrador)\n");

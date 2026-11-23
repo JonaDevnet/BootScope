@@ -29,6 +29,7 @@ function Log($texto) {
 }
 
 Log "Windows Sandbox detectado. Preparando entorno..."
+$env:BS_LAB = '1'
 
 # 1) copiar binarios al disco local del sandbox
 $exes = @('bootscope.exe', 'test_lab.exe', 'test_actions.exe')
