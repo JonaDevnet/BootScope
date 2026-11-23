@@ -30,3 +30,5 @@ tv.*
 bootscope-backup-*
 bootscope-report.json
 *-resumen.txt
+lab/resultados/
+lab/*.log

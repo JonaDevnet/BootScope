@@ -1,0 +1,17 @@
+<Configuration>
+  <!-- BootScope - laboratorio descartable.
+       Se abre con doble clic. No tiene red y todo cambio se pierde al cerrar. -->
+  <Networking>Disable</Networking>
+  <MemoryInMB>4096</MemoryInMB>
+  <ClipboardRedirection>Disable</ClipboardRedirection>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>D:\proyectsVS\BootScope</HostFolder>
+      <SandboxFolder>C:\lab</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\lab\lab\dentro.ps1</Command>
+  </LogonCommand>
+</Configuration>

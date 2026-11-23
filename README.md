@@ -127,6 +127,14 @@ Variables de diagnóstico:
   `%TEMP%\bootscope-input.log`.
 - `BS_TAB=0..5` abre directamente una pestaña.
 
+### Laboratorio descartable
+
+Para probar cambios destructivos (borrar servicios, matar procesos, tocar RDP)
+sin riesgo está `lab\sandbox.wsb`: un entorno de **Windows Sandbox** sin red que
+corre la batería de pruebas y deja los resultados en `lab\resultados\`.
+
+Ver [docs/laboratorio.md](docs/laboratorio.md).
+
 ## Documentación
 
 - [Catálogo de chequeos](docs/checks.md): qué detecta cada `check_id`, su riesgo y si es reversible.

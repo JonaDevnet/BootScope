@@ -33,9 +33,25 @@ gcc -std=c11 -O2 -Wall -Wextra ^
   -mwindows -luser32 -lgdi32 -lmsimg32 -lshell32 -ladvapi32 -lwevtapi -liphlpapi -lws2_32 -lole32
 
 if errorlevel 1 (
-  echo [ERROR] fallo la compilacion.
+  echo [ERROR] fallo la compilacion de bootscope.exe.
   exit /b 1
 )
 echo Listo: %OUT%\bootscope.exe
-endlocal
 
+rem --- pruebas (para el laboratorio y CI) ---
+echo Compilando pruebas...
+gcc -std=c11 -O2 -w -Isrc -Ivendor ^
+  tests\test_actions.c src\core\actions.c src\sys\util.c src\app.c ^
+  -o %OUT%\test_actions.exe -luser32 -ladvapi32
+
+gcc -std=c11 -O2 -w -Isrc -Ivendor ^
+  tests\test_lab.c src\core\actions.c src\sys\util.c src\app.c ^
+  -o %OUT%\test_lab.exe -luser32 -ladvapi32
+
+if errorlevel 1 (
+  echo [AVISO] no se pudieron compilar todas las pruebas.
+) else (
+  echo Listo: %OUT%\test_actions.exe y %OUT%\test_lab.exe
+)
+
+endlocal

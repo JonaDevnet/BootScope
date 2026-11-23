@@ -68,6 +68,17 @@ if(BS_BUILD_TESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
     target_link_libraries(test_actions PRIVATE user32 advapi32)
+
+    add_executable(test_lab
+        tests/test_lab.c
+        src/core/actions.c
+        src/sys/util.c
+        src/app.c
+    )
+    target_include_directories(test_lab PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_link_libraries(test_lab PRIVATE user32 advapi32)
 endif()
 
 
